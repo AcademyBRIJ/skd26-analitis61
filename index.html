@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CBT D'Ajiks Academy - Simulasi ANBK</title>
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- MathJax CDN untuk render LaTeX/matematika secara tegak dan jelas -->
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['$', '$'], ['\\(', '\\)']],
+        displayMath: [['$$', '$$'], ['\\[', '\\]']]
+      },
+      svg: {
+        fontCache: 'global'
+      }
+    };
+  </script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <style>
+    body {
+      user-select: none;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col font-sans">
+
+  <!-- ================= PAGE LOGIN ================= -->
+  <div id="login-page" class="flex-1 flex items-center justify-center p-4">
+    <div class="bg-white p-8 rounded-lg shadow-md max-w-md w-full border border-gray-200">
+      <div class="text-center mb-6">
+        <h1 class="text-2xl font-bold text-sky-700">D'Ajiks Academy</h1>
+        <p class="text-sm text-gray-500 mt-1">Simulasi Ujian Berbasis Komputer (ANBK)</p>
+      </div>
+      
+      <form id="login-form" onsubmit="startExam(event)">
+        <div class="mb-4">
+          <label for="student-name" class="block text-sm font-semibold text-gray-700 mb-1">Nama Peserta</label>
+          <input type="text" id="student-name" required placeholder="Masukkan nama lengkap" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500">
+        </div>
+        <div class="mb-6">
+          <label for="student-password" class="block text-sm font-semibold text-gray-700 mb-1">Password</label>
+          <input type="password" id="student-password" required placeholder="Masukkan password (skd26)" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-sky-500">
+          <p id="password-error" class="text-red-500 text-xs mt-1 hidden">Password salah! Silakan gunakan password: skd26</p>
+        </div>
+        <button type="submit" class="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-2.5 rounded-md transition duration-200 shadow">
+          Mulai Ujian
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= EXAM CONTAINER ================= -->
+  <div id="exam-page" class="hidden flex-1 flex-col h-screen overflow-hidden">
+    
+    <!-- HEADER BIRU MUDA -->
+    <header class="bg-sky-200 border-b border-sky-300 px-4 py-3 flex flex-wrap justify-between items-center text-sky-950 shrink-0">
+      <div class="font-bold text-lg tracking-wide">
+        D'Ajiks Academy
+      </div>
+      <div class="flex items-center space-x-6 text-sm md:text-base font-medium">
+        <div>Peserta: <span id="display-name" class="font-bold text-sky-900">-</span></div>
+        <div class="bg-white px-3 py-1 rounded shadow-sm border border-sky-300">
+          Sisa Waktu: <span id="timer" class="font-mono font-bold text-red-600">00:45:00</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- UTAMA: AREA SOAL & NAVIGASI NOMOR -->
+    <div class="flex-1 flex flex-col md:flex-row overflow-hidden p-4 gap-4 max-w-7xl w-full mx-auto">
+      
+      <!-- KIRI / ATAS: AREA SOAL -->
+      <main class="flex-1 bg-white rounded-lg border border-gray-300 shadow-sm flex flex-col overflow-hidden h-full">
+        
+        <!-- Header Soal -->
+        <div class="bg-gray-50 px-6 py-3 border-b border-gray-200 flex justify-between items-center shrink-0">
+          <span class="font-bold text-gray-700 text-lg">Soal No. <span id="question-number">1</span></span>
+          <span class="text-xs bg-sky-100 text-sky-800 px-2.5 py-1 rounded-full font-semibold">Penalaran Logis</span>
+        </div>
+
+        <!-- Isian Soal & Pilihan -->
+        <div class="p-6 overflow-y-auto flex-1">
+          <div id="question-text" class="text-gray-800 text-base md:text-lg mb-6 leading-relaxed whitespace-pre-line">
+            <!-- Teks Soal Dimuat via JS -->
+          </div>
+
+          <div id="options-container" class="space-y-3">
+            <!-- Pilihan Ganda Dimuat via JS -->
+          </div>
+        </div>
+
+        <!-- Tombol Navigasi Bawah -->
+        <footer class="bg-gray-50 px-4 py-3 border-t border-gray-200 flex flex-wrap justify-between items-center gap-2 shrink-0">
+          <button id="btn-prev" onclick="prevQuestion()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded text-sm transition shadow disabled:opacity-50 disabled:cursor-not-allowed">
+            &laquo; Soal Sebelumnya
+          </button>
+          
+          <label class="bg-yellow-400 hover:bg-yellow-500 text-black font-semibold px-4 py-2 rounded text-sm cursor-pointer select-none transition shadow flex items-center gap-2">
+            <input type="checkbox" id="cb-doubt" onchange="toggleDoubt()" class="w-4 h-4 rounded text-yellow-600 focus:ring-yellow-400">
+            <span>Ragu-Ragu</span>
+          </label>
+
+          <button id="btn-next" onclick="handleNextOrFinish()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded text-sm transition shadow">
+            Soal Berikutnya &raquo;
+          </button>
+        </footer>
+
+      </main>
+
+      <!-- KANAN / BAWAH: DAFTAR NOMOR SOAL (STATIS & TERKUNCI) -->
+      <aside class="w-full md:w-72 bg-white rounded-lg border border-gray-300 shadow-sm flex flex-col h-48 md:h-full shrink-0">
+        <div class="bg-gray-50 px-4 py-2.5 border-b border-gray-200 font-bold text-gray-700 text-center shrink-0">
+          Daftar Soal
+        </div>
+        
+        <div id="question-grid" class="p-3 grid grid-cols-5 gap-2 overflow-y-auto flex-1">
+          <!-- Kotak Nomor Dimuat via JS -->
+        </div>
+
+        <div class="p-2 border-t border-gray-200 bg-gray-50 text-[11px] text-gray-600 flex justify-around shrink-0">
+          <div class="flex items-center gap-1">
+            <span class="w-3 h-3 bg-gray-100 border border-gray-400 rounded-sm inline-block"></span> Belum
+          </div>
+          <div class="flex items-center gap-1">
+            <span class="w-3 h-3 bg-green-500 rounded-sm inline-block"></span> Dijawab
+          </div>
+          <div class="flex items-center gap-1">
+            <span class="w-3 h-3 bg-yellow-400 rounded-sm inline-block"></span> Ragu
+          </div>
+        </div>
+      </aside>
+
+    </div>
+  </div>
+
+  <!-- ================= RESULT & REVIEW PAGE ================= -->
+  <div id="result-page" class="hidden flex-1 flex-col p-4 md:p-8 max-w-5xl mx-auto w-full overflow-y-auto">
+    <div class="bg-white rounded-lg shadow-md border border-gray-200 p-6 mb-6 text-center">
+      <h2 class="text-2xl font-bold text-sky-800">Hasil Ujian - D'Ajiks Academy</h2>
+      <p class="text-gray-600 mt-1">Nama Peserta: <span id="result-student-name" class="font-semibold text-gray-800"></span></p>
+      
+      <div class="flex justify-center items-center gap-6 my-6">
+        <div class="bg-sky-50 border border-sky-200 p-4 rounded-lg min-w-[120px]">
+          <div class="text-xs text-gray-500 uppercase font-bold">Total Benar</div>
+          <div id="score-correct" class="text-3xl font-bold text-green-600">0</div>
+        </div>
+        <div class="bg-sky-50 border border-sky-200 p-4 rounded-lg min-w-[120px]">
+          <div class="text-xs text-gray-500 uppercase font-bold">Total Salah</div>
+          <div id="score-wrong" class="text-3xl font-bold text-red-600">0</div>
+        </div>
+        <div class="bg-sky-600 text-white p-4 rounded-lg min-w-[140px] shadow">
+          <div class="text-xs uppercase font-bold text-sky-100">Skor Akhir</div>
+          <div id="score-final" class="text-4xl font-extrabold">0</div>
+        </div>
+      </div>
+      <p class="text-xs text-gray-500">*Skor dihitung dari Total Benar × 5 poin (Maksimal 305 Poin).</p>
+    </div>
+
+    <!-- DAFTAR KOREKSI DAN PEMBAHASAN -->
+    <div class="bg-white rounded-lg shadow-md border border-gray-200 p-6">
+      <h3 class="text-xl font-bold text-gray-800 mb-4 pb-2 border-b">Koreksi Jawaban & Pembahasan</h3>
+      <div id="review-container" class="space-y-6">
+        <!-- Review Per Soal Dimuat via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= JAVASCRIPT ================= -->
+  <script>
+    // BANK SOAL LENGKAP 61 NOMOR TANPA PARAFRASE
+    const questions = [
+      {
+        id: 1,
+        text: "Jika listrik padam, maka kegiatan belajar dihentikan.\nListrik padam.\nKesimpulan yang sah dari premis-premis tersebut adalah ...",
+        options: [
+          "Kegiatan belajar berjalan lancar",
+          "Hari ini ada pemadaman bergiliran",
+          "Kegiatan belajar dihentikan",
+          "Hari ini siswa diliburkan",
+          "Listrik tidak padam"
+        ],
+        key: 2,
+        explanation: "Modus Ponens: $p \\rightarrow q$, $p \\vdash q$. (Maka kegiatan belajar dihentikan)"
+      },
+      {
+        id: 2,
+        text: "Jika listrik padam, maka kegiatan belajar dihentikan.\nKegiatan belajar tidak dihentikan.\nKesimpulan yang sah dari premis-premis tersebut adalah ...",
+        options: [
+          "Listrik padam",
+          "Listrik tidak padam",
+          "Hari ini tidak ada kegiatan belajar",
+          "Siswa sedang belajar mandiri",
+          "Hari ini hari libur"
+        ],
+        key: 1,
+        explanation: "Modus Tollens: $p \\rightarrow q$, $\\sim q \\vdash \\sim p$. (Listrik tidak padam)"
+      },
+      {
+        id: 3,
+        text: "Jika saya rajin belajar, maka saya lulus ujian.\nPernyataan yang ekuivalen ($\\equiv$) dengan pernyataan di atas adalah ...",
+        options: [
+          "Jika saya lulus ujian, maka saya rajin belajar",
+          "Jika saya lulus ujian, maka saya tidak rajin belajar",
+          "Jika saya rajin belajar, maka saya tidak lulus ujian",
+          "Saya tidak rajin belajar atau saya lulus ujian",
+          "Saya rajin belajar atau tidak lulus ujian"
+        ],
+        key: 3,
+        explanation: "Ekuivalensi Implikasi: $(p \\rightarrow q) \\equiv (\\sim p \\lor q)$. (Saya tidak rajin belajar atau saya lulus)"
+      },
+      {
+        id: 4,
+        text: "Jika saya rajin belajar, maka saya lulus ujian.\nPernyataan yang ekuivalen ($\\equiv$) dengan pernyataan di atas adalah ...",
+        options: [
+          "Jika saya lulus ujian, maka saya rajin belajar",
+          "Jika saya tidak lulus ujian, maka saya tidak rajin belajar",
+          "Jika saya rajin belajar, maka saya tidak lulus ujian",
+          "Saya rajin belajar dan tidak lulus ujian",
+          "Saya rajin belajar atau lulus ujian"
+        ],
+        key: 1,
+        explanation: "Kontraposisi (Ekuivalen): $(p \\rightarrow q) \\equiv (\\sim q \\rightarrow \\sim p)$. (Jika tidak lulus maka tidak rajin)"
+      },
+      {
+        id: 5,
+        text: "Jika Andi kehujanan, maka ia batuk.\nJika Andi batuk, maka ia berobat ke dokter.\nKesimpulan yang sah adalah ...",
+        options: [
+          "Jika Andi tidak kehujanan, maka ia berobat ke dokter",
+          "Jika Andi kehujanan, maka ia tidak berobat ke dokter",
+          "Jika Andi kehujanan, maka ia berobat ke dokter",
+          "Jika Andi berobat ke dokter, maka ia kehujanan",
+          "Andi kehujanan dan ia berobat ke dokter"
+        ],
+        key: 2,
+        explanation: "Silogisme: $p \\rightarrow q, q \\rightarrow r \\vdash p \\rightarrow r$. (Jika kehujanan maka berobat)"
+      },
+      {
+        id: 6,
+        text: "Jika Andi kehujanan, maka ia batuk.\nJika Andi batuk, maka ia berobat ke dokter.\nPernyataan yang ekuivalen dengan kesimpulan dari premis-premis di atas adalah ...",
+        options: [
+          "Jika Andi tidak kehujanan, maka ia berobat ke dokter",
+          "Jika Andi kehujanan, maka ia tidak berobat ke dokter",
+          "Jika Andi kehujanan, maka ia berobat ke dokter",
+          "Jika Andi tidak berobat ke dokter, maka Andi tidak kehujanan",
+          "Andi kehujanan dan ia berobat ke dokter"
+        ],
+        key: 3,
+        explanation: "Kontraposisi Silogisme: Kesimpulan $p \\rightarrow r \\equiv \\sim r \\rightarrow \\sim p$. (Jika tidak berobat maka tidak kehujanan)"
+      },
+      {
+        id: 7,
+        text: "Jika Andi kehujanan, maka ia batuk.\nJika Andi batuk, maka ia berobat ke dokter.\nPernyataan yang memiliki nilai kebenaran yang sama dengan kesimpulan premis-premis di atas adalah ...",
+        options: [
+          "Jika Andi tidak kehujanan, maka ia berobat ke dokter",
+          "Jika Andi kehujanan, maka ia tidak berobat ke dokter",
+          "Andi tidak kehujanan atau ia berobat ke dokter",
+          "Jika Andi berobat ke dokter, maka Andi tidak kehujanan",
+          "Andi kehujanan dan ia berobat ke dokter"
+        ],
+        key: 2,
+        explanation: "Ekuivalensi Disjungsi Kesimpulan: $p \\rightarrow r \\equiv \\sim p \\lor r$. (Andi tidak kehujanan atau ia berobat)"
+      },
+      {
+        id: 8,
+        text: "Negasi dari pernyataan \"Saya bekerja keras dan saya berhasil\" adalah ...",
+        options: [
+          "Jika saya bekerja keras, maka saya berhasil",
+          "Saya bekerja keras atau saya berhasil",
+          "Saya tidak bekerja keras dan saya tidak berhasil",
+          "Saya tidak bekerja keras atau saya tidak berhasil",
+          "Saya tidak berhasil atau saya bekerja keras"
+        ],
+        key: 3,
+        explanation: "Hukum De Morgan: $\\sim(p \\land q) \\equiv \\sim p \\lor \\sim q$. (Tidak bekerja keras atau tidak berhasil)"
+      },
+      {
+        id: 9,
+        text: "Negasi dari pernyataan \"Saya bekerja keras atau saya berhasil\" adalah ...",
+        options: [
+          "Jika saya bekerja keras, maka saya berhasil",
+          "Saya bekerja keras atau berhasil",
+          "Saya tidak bekerja keras dan saya tidak berhasil",
+          "Saya tidak bekerja keras atau saya tidak berhasil",
+          "Saya tidak berhasil atau tidak bekerja keras"
+        ],
+        key: 2,
+        explanation: "Hukum De Morgan: $\\sim(p \\lor q) \\equiv \\sim p \\land \\sim q$. (Tidak bekerja keras dan tidak berhasil)"
+      },
+      {
+        id: 10,
+        text: "Ingkaran dari pernyataan \"Saya ragu-ragu dan saya menyerah\" adalah ...",
+        options: [
+          "Saya ragu-ragu dan saya tidak menyerah",
+          "Saya tidak ragu-ragu dan saya tidak menyerah",
+          "Saya tidak ragu-ragu atau saya tidak menyerah",
+          "Jika saya ragu-ragu, maka saya menyerah",
+          "Jika saya tidak ragu-ragu, maka saya tidak menyerah"
+        ],
+        key: 2,
+        explanation: "Hukum De Morgan: $\\sim(p \\land q) \\equiv \\sim p \\lor \\sim q$. (Tidak ragu-ragu atau tidak menyerah)"
+      },
+      {
+        id: 11,
+        text: "Ingkaran dari pernyataan \"Saya ragu-ragu atau saya menyerah\" adalah ...",
+        options: [
+          "Saya ragu-ragu dan saya tidak menyerah",
+          "Saya tidak ragu-ragu dan saya tidak menyerah",
+          "Saya tidak ragu-ragu atau saya tidak menyerah",
+          "Jika saya ragu-ragu, maka saya menyerah",
+          "Jika saya tidak ragu-ragu, maka saya tidak menyerah"
+        ],
+        key: 1,
+        explanation: "Hukum De Morgan: $\\sim(p \\lor q) \\equiv \\sim p \\land \\sim q$. (Tidak ragu-ragu dan tidak menyerah)"
+      },
+      {
+        id: 12,
+        text: "Negasi dari pernyataan \"Jika saya rajin belajar, maka saya lulus ujian\" adalah ...",
+        options: [
+          "Jika saya lulus ujian, maka saya rajin belajar",
+          "Jika saya lulus ujian, maka saya tidak rajin belajar",
+          "Jika saya rajin belajar, maka saya tidak lulus ujian",
+          "Saya tidak rajin belajar dan saya lulus ujian",
+          "Saya rajin belajar dan saya tidak lulus ujian"
+        ],
+        key: 4,
+        explanation: "Negasi Implikasi: $\\sim(p \\rightarrow q) \\equiv p \\land \\sim q$. (Saya rajin belajar dan saya tidak lulus)"
+      },
+      {
+        id: 13,
+        text: "Ingkaran dari pernyataan \"Jika cuaca buruk, maka pesawat tidak terbang\" adalah ...",
+        options: [
+          "Jika pesawat terbang, maka cuaca buruk",
+          "Jika cuaca buruk, maka pesawat terbang",
+          "Jika pesawat tidak terbang, maka cuaca buruk",
+          "Cuaca buruk dan pesawat terbang",
+          "Cuaca buruk atau pesawat terbang"
+        ],
+        key: 3,
+        explanation: "Negasi Implikasi: $\\sim(p \\rightarrow \\sim q) \\equiv p \\land q$. (Cuaca buruk dan pesawat terbang)"
+      },
+      {
+        id: 14,
+        text: "Ingkaran dari \"Semua karyawan mengikuti rapat pada hari Senin\" adalah ...",
+        options: [
+          "Ada karyawan mengikuti rapat pada hari Senin",
+          "Semua karyawan tidak mengikuti rapat pada hari Senin",
+          "Ada karyawan tidak mengikuti rapat bukan pada hari Senin",
+          "Ada karyawan mengikuti rapat bukan pada hari Senin",
+          "Ada karyawan tidak mengikuti rapat pada hari Senin"
+        ],
+        key: 4,
+        explanation: "Negasi Kuantifier Universal: $\\sim(\\forall x, P(x)) \\equiv \\exists x, \\sim P(x)$. (Ada karyawan tidak mengikuti)"
+      },
+      {
+        id: 15,
+        text: "Ingkaran dari \"Ada karyawan tidak mengikuti rapat pada hari Senin\" adalah ...",
+        options: [
+          "Ada karyawan mengikuti rapat pada hari Senin",
+          "Semua karyawan tidak mengikuti rapat pada hari Senin",
+          "Semua karyawan mengikuti rapat bukan pada hari Senin",
+          "Semua karyawan mengikuti rapat pada hari Senin",
+          "Ada karyawan tidak mengikuti rapat pada hari Senin"
+        ],
+        key: 3,
+        explanation: "Negasi Kuantifier Eksistensial: $\\sim(\\exists x, \\sim P(x)) \\equiv \\forall x, P(x)$. (Semua karyawan mengikuti)"
+      },
+      {
+        id: 16,
+        text: "Ingkaran dari pernyataan \"Jika semua warga bergotong royong, maka lingkungan menjadi bersih\" adalah ...",
+        options: [
+          "Warga bergotong royong atau lingkungan bersih",
+          "Warga bergotong royong dan lingkungan bersih",
+          "Semua warga bergotong royong dan lingkungan tidak bersih",
+          "Ada warga bergotong royong",
+          "Lingkungan tidak bersih"
+        ],
+        key: 2,
+        explanation: "Negasi Implikasi Berkuantifier: $\\sim(\\forall x P(x) \\rightarrow q) \\equiv \\forall x P(x) \\land \\sim q$."
+      },
+      {
+        id: 17,
+        text: "Ingkaran dari pernyataan \"Jika semua siswa mematuhi tata tertib, maka Budi murid teladan\" adalah ...",
+        options: [
+          "Semua siswa mematuhi tata tertib dan Budi bukan murid teladan",
+          "Semua siswa mematuhi tata tertib dan Budi murid teladan",
+          "Ada siswa mematuhi tata tertib dan Budi bukan murid teladan",
+          "Ada siswa mematuhi tata tertib atau Budi murid teladan",
+          "Jika siswa mematuhi tata tertib, maka Budi murid teladan"
+        ],
+        key: 0,
+        explanation: "Negasi Implikasi: $p \\land \\sim q$. (Semua siswa mematuhi dan Budi bukan murid teladan)"
+      },
+      {
+        id: 18,
+        text: "Ingkaran dari pernyataan \"Jika semua peserta hadir, maka semua pintu aula dikunci rapat\" adalah ...",
+        options: [
+          "Jika ada peserta yang tidak hadir, maka ada pintu aula yang tidak dikunci rapat",
+          "Jika ada pintu aula yang tidak dikunci rapat, maka ada peserta yang tidak hadir",
+          "Semua peserta hadir dan semua pintu aula tidak dikunci rapat",
+          "Semua peserta hadir dan ada pintu aula yang tidak dikunci rapat",
+          "Ada peserta hadir dan ada pintu aula yang tidak dikunci rapat"
+        ],
+        key: 3,
+        explanation: "Negasi Implikasi Berkuantifier Hasil: $p \\land \\sim(\\forall y Q(y)) \\equiv p \\land \\exists y \\sim Q(y)$."
+      },
+      {
+        id: 19,
+        text: "Negasi dari pernyataan \"Jika ada peserta yang tidak membawa kartu ujian, maka semua peserta diperiksa\" adalah ...",
+        options: [
+          "Jika ada peserta yang membawa kartu ujian, maka semua peserta tidak diperiksa",
+          "Ada peserta yang tidak membawa kartu ujian dan semua peserta diperiksa",
+          "Ada peserta yang tidak membawa kartu ujian atau semua peserta diperiksa",
+          "Ada peserta yang tidak membawa kartu ujian dan ada peserta diperiksa",
+          "Ada peserta yang tidak membawa kartu ujian dan ada peserta tidak diperiksa"
+        ],
+        key: 4,
+        explanation: "Negasi Implikasi: $p \\land \\sim q \\equiv (\\exists x \\sim P(x)) \\land (\\exists y \\sim Q(y))$."
+      },
+      {
+        id: 20,
+        text: "Konvers dari pernyataan \"Jika saya rajin belajar, maka saya lulus ujian\" adalah ...",
+        options: [
+          "Jika saya lulus ujian, maka saya rajin belajar",
+          "Jika saya tidak lulus ujian, maka saya tidak rajin belajar",
+          "Jika saya rajin belajar, maka saya tidak lulus ujian",
+          "Saya tidak rajin belajar dan saya lulus ujian",
+          "Saya rajin belajar dan tidak lulus ujian"
+        ],
+        key: 0,
+        explanation: "Konvers: Konvers dari $p \\rightarrow q$ adalah $q \\rightarrow p$. (Jika saya lulus maka saya rajin)"
+      },
+      {
+        id: 21,
+        text: "Konvers dari pernyataan \"Jika cuaca buruk, maka pesawat tidak terbang\" adalah ...",
+        options: [
+          "Jika pesawat tidak terbang, maka cuaca buruk",
+          "Jika cuaca buruk, maka pesawat terbang",
+          "Jika pesawat terbang, maka cuaca buruk",
+          "Pesawat tidak terbang maka cuaca buruk",
+          "Jika pesawat tidak terbang, maka cuaca tidak buruk"
+        ],
+        key: 0,
+        explanation: "Konvers: Konvers dari $p \\rightarrow \\sim q$ adalah $\\sim q \\rightarrow p$. (Jika pesawat tidak terbang maka cuaca buruk)"
+      },
+      {
+        id: 22,
+        text: "Invers dari pernyataan \"Jika saya rajin belajar, maka saya lulus ujian\" adalah ...",
+        options: [
+          "Jika saya lulus ujian, maka saya rajin belajar",
+          "Jika saya tidak lulus ujian, maka saya tidak rajin belajar",
+          "Jika saya tidak rajin belajar, maka saya tidak lulus ujian",
+          "Saya tidak rajin belajar dan saya tidak lulus ujian",
+          "Saya rajin belajar dan tidak lulus ujian"
+        ],
+        key: 2,
+        explanation: "Invers: Invers dari $p \\rightarrow q$ adalah $\\sim p \\rightarrow \\sim q$. (Jika tidak rajin maka tidak lulus)"
+      },
+      {
+        id: 23,
+        text: "Invers dari pernyataan \"Jika cuaca buruk, maka pesawat tidak terbang\" adalah ...",
+        options: [
+          "Jika pesawat terbang, maka cuaca tidak buruk",
+          "Jika cuaca tidak buruk, maka pesawat terbang",
+          "Jika pesawat tidak terbang, maka cuaca tidak buruk",
+          "Pesawat tidak terbang maka cuaca buruk",
+          "Jika pesawat tidak terbang, maka cuaca buruk"
+        ],
+        key: 1,
+        explanation: "Invers: Invers dari $p \\rightarrow \\sim q$ adalah $\\sim p \\rightarrow q$. (Jika cuaca tidak buruk maka pesawat terbang)"
+      },
+      {
+        id: 24,
+        text: "Invers dari pernyataan \"Jika ada peserta yang tidak membawa kartu ujian, maka semua peserta diperiksa\" adalah ...",
+        options: [
+          "Jika ada peserta yang membawa kartu ujian, maka semua peserta tidak diperiksa",
+          "Jika semua peserta membawa kartu ujian, maka ada peserta yang tidak diperiksa",
+          "Jika ada peserta yang tidak diperiksa, maka semua peserta membawa kartu ujian",
+          "Jika semua peserta tidak diperiksa, maka ada peserta membawa kartu ujian",
+          "Jika semua peserta membawa kartu ujian, maka semua peserta tidak diperiksa"
+        ],
+        key: 4,
+        explanation: "Invers: Invers dari $(\\exists x \\sim P(x)) \\rightarrow (\\forall y Q(y))$ adalah $(\\forall x P(x)) \\rightarrow (\\exists y \\sim Q(y))$."
+      },
+      {
+        id: 25,
+        text: "Kontraposisi dari pernyataan \"Jika saya rajin belajar, maka saya lulus ujian\" adalah ...",
+        options: [
+          "Jika saya lulus ujian, maka saya rajin belajar",
+          "Jika saya tidak lulus ujian, maka saya tidak rajin belajar",
+          "Jika saya tidak rajin belajar, maka saya tidak lulus ujian",
+          "Saya tidak rajin belajar dan saya tidak lulus ujian",
+          "Saya rajin belajar dan tidak lulus ujian"
+        ],
+        key: 1,
+        explanation: "Kontraposisi: Kontraposisi dari $p \\rightarrow q$ adalah $\\sim q \\rightarrow \\sim p$."
+      },
+      {
+        id: 26,
+        text: "Kontraposisi dari pernyataan \"Jika cuaca buruk, maka pesawat tidak terbang\" adalah ...",
+        options: [
+          "Jika pesawat terbang, maka cuaca tidak buruk",
+          "Jika cuaca tidak buruk, maka pesawat terbang",
+          "Jika pesawat tidak terbang, maka cuaca tidak buruk",
+          "Pesawat tidak terbang maka cuaca buruk",
+          "Jika pesawat tidak terbang, maka cuaca buruk"
+        ],
+        key: 0,
+        explanation: "Kontraposisi: Kontraposisi dari $p \\rightarrow \\sim q$ adalah $q \\rightarrow \\sim p$. (Jika pesawat terbang maka cuaca tidak buruk)"
+      },
+      {
+        id: 27,
+        text: "Kontraposisi dari pernyataan \"Jika ada peserta yang tidak membawa kartu ujian, maka semua peserta diperiksa\" adalah ...",
+        options: [
+          "Jika ada peserta yang membawa kartu ujian, maka semua peserta tidak diperiksa",
+          "Jika ada peserta yang tidak diperiksa, maka semua peserta membawa kartu ujian",
+          "Jika semua peserta tidak diperiksa, maka semua peserta membawa kartu ujian",
+          "Jika ada peserta yang diperiksa, maka ada peserta yang tidak membawa kartu",
+          "Jika semua peserta membawa kartu ujian, maka ada peserta yang tidak diperiksa"
+        ],
+        key: 2,
+        explanation: "Kontraposisi: $\\sim(\\forall y Q(y)) \\rightarrow \\sim(\\exists x \\sim P(x)) \\equiv (\\exists y \\sim Q(y)) \\rightarrow (\\forall x P(x))$."
+      },
+      {
+        id: 28,
+        text: "Jika Doni lulus seleksi, maka ia pindah ke Jakarta. Jika ia pindah ke Jakarta, maka ia menyewa apartemen. Kesimpulan yang sah adalah ...",
+        options: [
+          "Jika Doni tidak menyewa apartemen, maka Doni lulus seleksi",
+          "Jika Doni menyewa apartemen, maka Doni lulus seleksi",
+          "Doni lulus seleksi dan menyewa apartemen",
+          "Jika Doni lulus seleksi, maka ia menyewa apartemen",
+          "Doni menyewa apartemen atau Doni tidak lulus seleksi"
+        ],
+        key: 3,
+        explanation: "Silogisme: $p \\rightarrow q, q \\rightarrow r \\vdash p \\rightarrow r$. (Jika Doni lulus seleksi maka ia menyewa apartemen)"
+      },
+      {
+        id: 29,
+        text: "Jika Doni lulus seleksi, maka ia pindah ke Jakarta. Jika ia pindah ke Jakarta, maka ia menyewa apartemen. Pernyataan yang ekuivalen dengan kesimpulan pernyataan di atas adalah ...",
+        options: [
+          "Jika Doni tidak menyewa apartemen, maka Doni lulus seleksi",
+          "Jika Doni menyewa apartemen, maka Doni lulus seleksi",
+          "Doni lulus seleksi dan ia tidak menyewa apartemen",
+          "Jika Doni lulus seleksi, maka ia menyewa apartemen",
+          "Doni tidak lulus seleksi atau ia menyewa apartemen"
+        ],
+        key: 4,
+        explanation: "Ekuivalensi Kesimpulan: $(p \\rightarrow r) \\equiv \\sim p \\lor r$. (Doni tidak lulus seleksi atau ia menyewa apartemen)"
+      },
+      {
+        id: 30,
+        text: "Jika Doni lulus seleksi, maka ia pindah ke Jakarta. Jika ia pindah ke Jakarta, maka ia menyewa apartemen. Ingkaran dari kesimpulan pernyataan di atas adalah ...",
+        options: [
+          "Jika Doni tidak menyewa apartemen, maka Doni lulus seleksi",
+          "Jika Doni menyewa apartemen, maka Doni lulus seleksi",
+          "Doni lulus seleksi dan ia tidak menyewa apartemen",
+          "Jika Doni lulus seleksi, maka ia menyewa apartemen",
+          "Doni menyewa apartemen atau Doni tidak lulus seleksi"
+        ],
+        key: 2,
+        explanation: "Ingkaran Kesimpulan: $\\sim(p \\rightarrow r) \\equiv p \\land \\sim r$. (Doni lulus seleksi dan ia tidak menyewa apartemen)"
+      },
+      {
+        id: 31,
+        text: "Jika Doni lulus seleksi, maka ia pindah ke Jakarta. Jika ia pindah ke Jakarta, maka ia menyewa apartemen. Konvers dari kesimpulan pernyataan di atas adalah ...",
+        options: [
+          "Jika Doni tidak menyewa apartemen, maka Doni lulus seleksi",
+          "Jika Doni menyewa apartemen, maka Doni lulus seleksi",
+          "Doni lulus seleksi dan ia tidak menyewa apartemen",
+          "Jika Doni lulus seleksi, maka ia menyewa apartemen",
+          "Doni menyewa apartemen atau Doni tidak lulus seleksi"
+        ],
+        key: 1,
+        explanation: "Konvers Kesimpulan: Konvers dari $p \\rightarrow r$ adalah $r \\rightarrow p$."
+      },
+      {
+        id: 32,
+        text: "Jika Doni lulus seleksi, maka ia pindah ke Jakarta. Jika ia pindah ke Jakarta, maka ia menyewa apartemen. Invers dari kesimpulan pernyataan di atas adalah ...",
+        options: [
+          "Jika Doni tidak menyewa apartemen, maka Doni tidak lulus seleksi",
+          "Jika Doni menyewa apartemen, maka Doni lulus seleksi",
+          "Jika Doni tidak lulus seleksi, maka ia tidak menyewa apartemen",
+          "Jika Doni lulus seleksi, maka ia menyewa apartemen",
+          "Doni menyewa apartemen atau Doni tidak lulus seleksi"
+        ],
+        key: 2,
+        explanation: "Invers Kesimpulan: Invers dari $p \\rightarrow r$ adalah $\\sim p \\rightarrow \\sim r$."
+      },
+      {
+        id: 33,
+        text: "Jika Doni lulus seleksi, maka ia pindah ke Jakarta. Jika ia pindah ke Jakarta, maka ia menyewa apartemen. Kontraposisi dari kesimpulan pernyataan di atas adalah ...",
+        options: [
+          "Jika Doni tidak menyewa apartemen, maka Doni tidak lulus seleksi",
+          "Jika Doni menyewa apartemen, maka Doni lulus seleksi",
+          "Jika Doni tidak lulus seleksi, maka ia tidak menyewa apartemen",
+          "Jika Doni lulus seleksi, maka ia menyewa apartemen",
+          "Doni menyewa apartemen atau Doni tidak lulus seleksi"
+        ],
+        key: 0,
+        explanation: "Kontraposisi Kesimpulan: Kontraposisi dari $p \\rightarrow r$ adalah $\\sim r \\rightarrow \\sim p$."
+      },
+      {
+        id: 34,
+        text: "Jika ada siswa yang melanggar aturan, maka semua siswa dihukum. Jika semua siswa dihukum, maka semua orang tua dipanggil. Kesimpulan yang sah adalah ...",
+        options: [
+          "Jika ada siswa yang melanggar aturan, maka semua orang tua tidak dipanggil",
+          "Jika ada siswa yang dihukum, maka semua siswa mematuhi aturan",
+          "Jika ada siswa yang melanggar aturan, maka semua orang tua dipanggil",
+          "Jika semua siswa tidak dihukum, maka ada siswa yang mematuhi aturan",
+          "Jika semua siswa mematuhi aturan, maka ada orang tua yang tidak dipanggil"
+        ],
+        key: 2,
+        explanation: "Silogisme: $p \\rightarrow q, q \\rightarrow r \\vdash p \\rightarrow r$. (Jika ada siswa melanggar maka semua orang tua dipanggil)"
+      },
+      {
+        id: 35,
+        text: "Jika ada siswa yang melanggar aturan, maka semua siswa dihukum. Jika semua siswa dihukum, maka semua orang tua dipanggil. Pernyataan yang ekuivalen dengan kesimpulan yang sah adalah ...",
+        options: [
+          "Jika ada siswa yang melanggar aturan, maka semua orang tua dipanggil",
+          "Jika ada orang tua yang tidak dipanggil, maka semua siswa mematuhi aturan",
+          "Jika ada orang tua yang tidak dipanggil, maka ada siswa yang mematuhi aturan",
+          "Jika semua orang tua tidak dipanggil, maka ada siswa yang melanggar aturan",
+          "Jika ada orang tua yang tidak dipanggil, maka semua siswa melanggar aturan"
+        ],
+        key: 1,
+        explanation: "Kontraposisi Kesimpulan: $\\sim r \\rightarrow \\sim p$. (Jika ada orang tua tidak dipanggil maka semua siswa mematuhi aturan)"
+      },
+      {
+        id: 36,
+        text: "Jika ada siswa yang melanggar aturan, maka semua siswa dihukum. Jika semua siswa dihukum, maka semua orang tua dipanggil. Pernyataan yang memiliki nilai kebenaran yang sama dengan kesimpulan yang sah adalah ...",
+        options: [
+          "Jika ada siswa yang melanggar aturan, maka semua orang tua dipanggil",
+          "Semua siswa melanggar aturan atau semua orang tua tidak dipanggil",
+          "Ada siswa yang mematuhi aturan dan semua orang tua tidak dipanggil",
+          "Semua siswa mematuhi aturan atau semua orang tua dipanggil",
+          "Jika tidak ada orang tua yang tidak dipanggil, maka semua siswa mematuhi aturan"
+        ],
+        key: 3,
+        explanation: "Ekuivalensi Disjungsi: $(p \\rightarrow r) \\equiv \\sim p \\lor r$. (Semua siswa mematuhi aturan atau semua orang tua dipanggil)"
+      },
+      {
+        id: 37,
+        text: "Jika ada siswa yang melanggar aturan, maka semua siswa dihukum. Jika semua siswa dihukum, maka semua orang tua dipanggil. Konvers dari kesimpulan yang sah adalah ...",
+        options: [
+          "Jika ada siswa yang melanggar aturan, maka semua orang tua dipanggil",
+          "Jika semua orang tua dipanggil, maka ada siswa yang melanggar aturan",
+          "Jika semua orang tua tidak dipanggil, maka ada siswa yang melanggar aturan",
+          "Jika ada orang tua yang tidak dipanggil, maka ada siswa yang melanggar aturan",
+          "Jika tidak ada orang tua yang tidak dipanggil, maka ada siswa yang melanggar aturan"
+        ],
+        key: 1,
+        explanation: "Konvers Kesimpulan: $r \\rightarrow p$. (Jika semua orang tua dipanggil maka ada siswa yang melanggar aturan)"
+      },
+      {
+        id: 38,
+        text: "Jika ada siswa yang melanggar aturan, maka semua siswa dihukum. Jika semua siswa dihukum, maka semua orang tua dipanggil. Invers dari kesimpulan yang sah adalah ...",
+        options: [
+          "Jika semua siswa mematuhi aturan, maka ada orang tua yang tidak dipanggil",
+          "Jika semua siswa mematuhi aturan, maka semua orang tua dipanggil",
+          "Jika semua siswa mematuhi aturan, maka ada orang tua yang dipanggil",
+          "Jika semua siswa mematuhi aturan, maka tidak semua orang tua dipanggil",
+          "Semua jawaban di atas benar"
+        ],
+        key: 0,
+        explanation: "Invers Kesimpulan: $\\sim p \\rightarrow \\sim r$. (Jika semua siswa mematuhi aturan maka ada orang tua yang tidak dipanggil)"
+      },
+      {
+        id: 39,
+        text: "Jika ada siswa yang melanggar aturan, maka semua siswa dihukum. Jika semua siswa dihukum, maka semua orang tua dipanggil. Kontraposisi dari kesimpulan yang sah adalah ...",
+        options: [
+          "Jika ada siswa yang melanggar aturan, maka semua orang tua dipanggil",
+          "Jika ada orang tua yang tidak dipanggil, maka semua siswa mematuhi aturan",
+          "Jika tidak ada orang tua yang tidak dipanggil, maka tidak ada siswa yang mematuhi aturan",
+          "Jika semua orang tua tidak dipanggil, maka ada siswa melanggar aturan",
+          "Jika ada orang tua yang tidak dipanggil, maka semua siswa melanggar aturan"
+        ],
+        key: 1,
+        explanation: "Kontraposisi Kesimpulan: $\\sim r \\rightarrow \\sim p$. (Jika ada orang tua tidak dipanggil maka semua siswa mematuhi aturan)"
+      },
+      {
+        id: 40,
+        text: "Semua pengemudi bus jalan jauh selalu meminum kopi agar tidak mengantuk.\nSebagian pengemudi bus jalan jauh yang meminum kopi, tidak pernah mengalami kecelakaan.\nKesimpulannya adalah ...",
+        options: [
+          "Semua yang tidak pernah meminum kopi bukan pengemudi bus jalan jauh",
+          "Semua yang tidak pernah mengalami kecelakaan bukan pengemudi bus jalan jauh",
+          "Semua pengemudi bus jalan jauh tidak pernah mengalami kecelakaan",
+          "Sebagian pengemudi bus jalan jauh tidak pernah mengalami kecelakaan",
+          "Sebagian pengemudi bus jalan jauh mengalami kecelakaan saat meminum kopi"
+        ],
+        key: 3,
+        explanation: "Silogisme Kuantifier: Semua A adalah B. Sebagian B adalah C. Kesimpulan: Sebagian A adalah C."
+      },
+      {
+        id: 41,
+        text: "Sebagian mahasiswa belajar di perpustakaan.\nSebagian mahasiswa belajar di kafe.\nKesimpulannya adalah ...",
+        options: [
+          "Semua mahasiswa yang di perpustakaan juga belajar di kafe",
+          "Sebagian mahasiswa belajar di perpustakaan dan kafe",
+          "Sebagian mahasiswa belajar di rumah",
+          "Tidak dapat disimpulkan",
+          "Semua mahasiswa rajin belajar"
+        ],
+        key: 3,
+        explanation: "Dua Premis Khusus (Sebagian/Sebagian): Premis \"Sebagian\" + \"Sebagian\" tidak dapat ditarik kesimpulan yang valid."
+      },
+      {
+        id: 42,
+        text: "Semua wilayah pegunungan udaranya sejuk dan banyak pepohonan.\nAnda berada di tempat yang tidak sejuk dan tidak banyak pepohonan.\nKesimpulannya adalah ...",
+        options: [
+          "Anda berada di pegunungan yang sejuk",
+          "Anda berada di pegunungan yang tidak banyak pepohonan",
+          "Anda berada di bukan wilayah pegunungan",
+          "Anda berada di wilayah pegunungan daratan rendah",
+          "Tempat tersebut adalah pegunungan tanpa pohon"
+        ],
+        key: 2,
+        explanation: "Modus Tollens Kuantifier: Pegunungan $\\rightarrow$ Sejuk & Berpohon. Bukan (Sejuk & Berpohon) $\\rightarrow$ Bukan Pegunungan."
+      },
+      {
+        id: 43,
+        text: "Semua orang yang sudah berumur 17 tahun wajib memiliki KTP.\nSemua orang yang memiliki KTP pernah mendatangi kantor kecamatan.\nKesimpulannya adalah ...",
+        options: [
+          "Semua orang yang memiliki KTP belum pernah ke kantor kecamatan",
+          "Semua orang yang sudah berumur 17 tahun pernah mendatangi kantor kecamatan",
+          "Semua orang datang ke kantor kecamatan hanya untuk mengurus KTP",
+          "Ada pemilik KTP yang belum pernah ke kantor kecamatan",
+          "Sebagian orang yang sudah berumur 17 tahun tidak pernah ke kantor kecamatan"
+        ],
+        key: 1,
+        explanation: "Silogisme Kuantifier Universal: Semua $A \\rightarrow B$, Semua $B \\rightarrow C \\vdash$ Semua $A \\rightarrow C$."
+      },
+      {
+        id: 44,
+        text: "Semua anggota tim A akan berpartisipasi dalam kompetisi.\nSebagian orang yang berada di panggung adalah anggota tim A.\nKesimpulannya adalah ...",
+        options: [
+          "Seluruh orang yang ada di panggung adalah anggota tim A",
+          "Semua orang yang ada di panggung akan berpartisipasi dalam kompetisi",
+          "Sebagian orang yang ada di panggung akan berpartisipasi dalam kompetisi",
+          "Ada anggota tim A yang tidak berpartisipasi dalam kompetisi",
+          "Sebagian orang yang ada di panggung tidak akan berpartisipasi dalam kompetisi"
+        ],
+        key: 2,
+        explanation: "Premis Umum + Khusus: Semua A $\\rightarrow$ B, Sebagian C adalah A $\\vdash$ Sebagian C adalah B."
+      },
+      {
+        id: 45,
+        text: "Setiap peserta seminar mendapatkan sertifikat dari panitia.\nSiska tidak mendapatkan sertifikat dari panitia.\nKesimpulannya adalah ...",
+        options: [
+          "Siska tidak mengikuti seminar dengan panitia tersebut",
+          "Siska mengikuti seminar yang berbeda",
+          "Panitia lupa memberikan Siska sertifikat",
+          "Siska bukan peserta seminar",
+          "Siska tidak menghadiri acara pemutaran video"
+        ],
+        key: 3,
+        explanation: "Modus Tollens: Peserta $\\rightarrow$ Dapat Sertifikat. Tidak dapat sertifikat $\\vdash$ Bukan peserta."
+      },
+      {
+        id: 46,
+        text: "Jika Tono lulus ujian kurang dari atau sama dengan 3 tahun, maka ia akan diterima bekerja di Perusahaan X.\nJika Tono bekerja di Perusahaan X, maka ayahnya akan membelikan mobil.\nTono tidak mendapat mobil dari ayahnya.\nKesimpulannya adalah ...",
+        options: [
+          "Tono menyelesaikan studinya kurang dari 3 tahun",
+          "Tono menyelesaikan studinya lebih dari 3 tahun",
+          "Tono bekerja di Perusahaan X",
+          "Tono menyelesaikan studinya tepat 3 tahun",
+          "Tono mengundurkan diri dari Perusahaan X"
+        ],
+        key: 1,
+        explanation: "Modus Tollens Berantai: Lulus $\\le$ 3 thn $\\rightarrow$ Bekerja di X $\\rightarrow$ Dapat Mobil. Tidak dapat mobil $\\vdash$ Lulus $> 3$ thn."
+      },
+      {
+        id: 47,
+        text: "Jika Koko tidak menghentikan kebiasaan bergadang, maka daya tahan tubuhnya akan menurun.\nJika daya tahan tubuhnya menurun, maka Koko tidak bisa ikut bertanding dalam turnamen basket.\nKoko bertanding dalam turnamen basket.\nKesimpulannya adalah ...",
+        options: [
+          "Daya tahan tubuh Koko tidak menurun",
+          "Koko sudah terbiasa bergadang",
+          "Koko telah mengurangi jam bergadangnya",
+          "Koko menghentikan kebiasaan bergadang",
+          "Koko dipaksa bertanding oleh pelatihnya"
+        ],
+        key: 3,
+        explanation: "Modus Tollens Berantai: Bergadang $\\rightarrow$ Turun Daya Tahan $\\rightarrow$ Tidak Ikut Turnamen. Ikut Turnamen $\\vdash$ Tidak Bergadang."
+      },
+      {
+        id: 48,
+        text: "Jika hari ini hujan deras, maka Budi tidak keluar rumah.\nBudi keluar rumah.\nKesimpulan yang sah dari premis-premis tersebut adalah ...",
+        options: [
+          "Hari ini hujan deras",
+          "Hari ini tidak hujan deras",
+          "Hari ini hujan tidak deras atau Budi tidak keluar rumah",
+          "Hari ini tidak hujan dan Budi tidak keluar rumah",
+          "Hari ini hujan deras atau Budi tidak keluar rumah"
+        ],
+        key: 1,
+        explanation: "Modus Tollens: $p \\rightarrow \\sim q, q \\vdash \\sim p$. (Hari ini tidak hujan deras)"
+      },
+      {
+        id: 49,
+        text: "Jika hari ini hujan deras, maka Budi tidak keluar rumah.\nHari ini hujan deras.\nKesimpulan yang sah dari premis-premis tersebut adalah ...",
+        options: [
+          "Budi keluar rumah",
+          "Hari ini hujan tidak deras",
+          "Budi tidak keluar rumah",
+          "Hari ini tidak hujan dan Budi tidak keluar rumah",
+          "Hari ini hujan deras atau Budi tidak keluar rumah"
+        ],
+        key: 2,
+        explanation: "Modus Ponens: $p \\rightarrow \\sim q, p \\vdash \\sim q$. (Budi tidak keluar rumah)"
+      },
+      {
+        id: 50,
+        text: "Jika ibu memasak rendang, maka ibu membeli daging.\nJika ibu membeli daging, maka ibu membuat santan.\nPernyataan kesimpulan yang sah adalah ...",
+        options: [
+          "Jika ibu tidak memasak rendang, maka ibu membuat santan",
+          "Jika ibu tidak memasak rendang, maka ibu tidak membuat santan",
+          "Ibu memasak rendang dan ibu membeli sayur",
+          "Ibu memasak rendang atau ibu membeli sayur",
+          "Jika ibu memasak rendang, maka ibu membuat santan"
+        ],
+        key: 4,
+        explanation: "Silogisme: $p \\rightarrow q, q \\rightarrow r \\vdash p \\rightarrow r$. (Jika ibu memasak rendang maka ibu membuat santan)"
+      },
+      {
+        id: 51,
+        text: "Jika ibu memasak rendang, maka ibu membeli daging.\nJika ibu membeli daging, maka ibu membuat santan.\nPernyataan yang ekuivalen ($\\sim p \\lor r$) dengan kesimpulan di atas adalah ...",
+        options: [
+          "Ibu tidak memasak rendang dan ibu membuat santan",
+          "Jika ibu tidak memasak rendang, maka ibu membuat santan",
+          "Jika ibu memasak rendang, maka ibu tidak membuat santan",
+          "Jika ibu memasak rendang, maka ibu membeli sayur",
+          "Ibu tidak memasak rendang atau ibu membuat santan"
+        ],
+        key: 4,
+        explanation: "Ekuivalensi Disjungsi: $(p \\rightarrow r) \\equiv \\sim p \\lor r$. (Ibu tidak memasak rendang atau ibu membuat santan)"
+      },
+      {
+        id: 52,
+        text: "Jika ibu memasak rendang, maka ibu membeli daging.\nJika ibu membeli daging, maka ibu membuat santan.\nKontraposisi dari kesimpulan di atas adalah ...",
+        options: [
+          "Ibu tidak memasak rendang dan ibu membuat santan",
+          "Jika ibu tidak membuat santan, maka ibu tidak memasak rendang",
+          "Ibu memasak rendang dan ibu membeli sayur",
+          "Ibu memasak rendang atau ibu membeli sayur",
+          "Jika ibu tidak memasak rendang, maka ibu membuat santan"
+        ],
+        key: 1,
+        explanation: "Kontraposisi: $\\sim r \\rightarrow \\sim p$. (Jika ibu tidak membuat santan maka ibu tidak memasak rendang)"
+      },
+      {
+        id: 53,
+        text: "Jika kabut tebal, maka jarak pandang berkurang.\nJika bantuan alat datang, maka pemadam kebakaran cepat memadamkan api.\nKabut tebal atau pemadam kebakaran tidak cepat memadamkan api.\nKesimpulannya adalah ...",
+        options: [
+          "Jarak pandang berkurang atau bantuan alat tidak datang",
+          "Jarak pandang tidak berkurang atau bantuan alat tidak datang",
+          "Jarak pandang berkurang dan bantuan alat datang",
+          "Jika bantuan alat tidak datang, maka api cepat padam",
+          "Jika kabut tebal, maka api tidak cepat padam"
+        ],
+        key: 0,
+        explanation: "Dilema Konstruktif/Destruktif: $p \\rightarrow q, r \\rightarrow s, p \\lor \\sim s \\vdash q \\lor \\sim r$."
+      },
+      {
+        id: 54,
+        text: "Jika kabut tebal, maka jarak pandang berkurang.\nJika bantuan alat datang, maka pemadam kebakaran cepat memadamkan api.\nJarak pandang tidak berkurang atau pemadam kebakaran tidak cepat memadamkan api.\nKesimpulannya adalah ...",
+        options: [
+          "Jarak pandang berkurang atau bantuan alat tidak datang",
+          "Jarak pandang tidak berkurang atau bantuan alat tidak datang",
+          "Jarak pandang berkurang dan bantuan alat datang",
+          "Bantuan alat tidak datang atau api cepat padam",
+          "Kabut tidak tebal atau bantuan alat tidak datang"
+        ],
+        key: 4,
+        explanation: "Dilema Destruktif: $p \\rightarrow q, r \\rightarrow s, \\sim q \\lor \\sim s \\vdash \\sim p \\lor \\sim r$. (Kabut tidak tebal atau bantuan alat tidak datang)"
+      },
+      {
+        id: 55,
+        text: "Jika kabut tebal, maka jarak pandang berkurang.\nJika bantuan alat datang, maka pemadam kebakaran cepat memadamkan api.\nKabut tebal atau bantuan alat datang.\nKesimpulannya adalah ...",
+        options: [
+          "Jarak pandang berkurang atau bantuan alat tidak datang",
+          "Jarak pandang tidak berkurang atau bantuan alat tidak datang",
+          "Jarak pandang berkurang dan api cepat padam",
+          "Bantuan alat tidak datang atau api cepat padam",
+          "Jarak pandang berkurang atau pemadam kebakaran cepat memadamkan api"
+        ],
+        key: 4,
+        explanation: "Dilema Konstruktif: $p \\rightarrow q, r \\rightarrow s, p \\lor r \\vdash q \\lor s$. (Jarak pandang berkurang atau pemadam cepat memadamkan api)"
+      },
+      {
+        id: 56,
+        text: "Jika Doni lulus seleksi, maka ia pergi ke Jakarta.\nJika Dian pergi ke Lembang, maka ia singgah di rumah teman.\nDoni lulus seleksi atau Dian pergi ke Lembang.\nKesimpulannya adalah ...",
+        options: [
+          "Doni pergi ke Jakarta dan Dian singgah di rumah teman",
+          "Jika Doni pergi ke Jakarta, maka Dian singgah di rumah teman",
+          "Doni pergi ke Jakarta atau Dian singgah di rumah teman",
+          "Doni tidak lulus seleksi atau Dian tidak pergi ke Lembang",
+          "Doni pergi ke Jakarta atau Dian tidak pergi ke Lembang"
+        ],
+        key: 2,
+        explanation: "Dilema Konstruktif: $p \\rightarrow q, r \\rightarrow s, p \\lor r \\vdash q \\lor s$. (Doni pergi ke Jakarta atau Dian singgah di rumah teman)"
+      },
+      {
+        id: 57,
+        text: "Jika Doni lulus seleksi, maka ia pergi ke Jakarta.\nJika Dian pergi ke Lembang, maka ia singgah di rumah teman.\nDoni tidak pergi ke Jakarta atau Dian tidak singgah di rumah teman.\nKesimpulannya adalah ...",
+        options: [
+          "Doni pergi ke Jakarta dan Dian singgah di rumah teman",
+          "Jika Doni pergi ke Jakarta, maka Dian singgah di rumah teman",
+          "Doni pergi ke Jakarta atau Dian singgah di rumah teman",
+          "Doni tidak lulus seleksi atau Dian tidak pergi ke Lembang",
+          "Doni pergi ke Jakarta atau Dian tidak pergi ke Lembang"
+        ],
+        key: 3,
+        explanation: "Dilema Destruktif: $p \\rightarrow q, r \\rightarrow s, \\sim q \\lor \\sim s \\vdash \\sim p \\lor \\sim r$. (Doni tidak lulus seleksi atau Dian tidak pergi ke Lembang)"
+      },
+      {
+        id: 58,
+        text: "Jika Doni lulus seleksi, maka ia pergi ke Jakarta.\nJika Dian pergi ke Lembang, maka ia singgah di rumah teman.\nDoni lulus seleksi atau Dian tidak singgah di rumah teman.\nKesimpulannya adalah ...",
+        options: [
+          "Doni pergi ke Jakarta dan Dian singgah di rumah teman",
+          "Jika Doni pergi ke Jakarta, maka Dian singgah di rumah teman",
+          "Doni tidak lulus seleksi atau Dian tidak pergi ke Lembang",
+          "Doni pergi ke Jakarta atau Dian singgah di rumah teman",
+          "Doni pergi ke Jakarta atau Dian tidak pergi ke Lembang"
+        ],
+        key: 4,
+        explanation: "Dilema Campuran: $p \\rightarrow q, r \\rightarrow s, p \\lor \\sim s \\vdash q \\lor \\sim r$. (Doni pergi ke Jakarta atau Dian tidak pergi ke Lembang)"
+      },
+      {
+        id: 59,
+        text: "Premis:\nJika debit air sungai meningkat, maka arus sungai menjadi deras.\nJika arus sungai menjadi deras, maka erosi tanah terjadi.\nJika erosi tanah terjadi, maka fondasi jembatan melemah.\nJika fondasi jembatan melemah, maka struktur jembatan mengalami retakan.\nJika struktur jembatan mengalami retakan, maka jembatan ditutup untuk umum.\n\nPertanyaan: Diketahui jembatan ditutup untuk umum. Kesimpulan yang logis adalah ...",
+        options: [
+          "Debit air sungai pasti meningkat.",
+          "Debit air sungai tidak meningkat.",
+          "Erosi tanah tidak terjadi.",
+          "Arus sungai pasti sangat deras.",
+          "Tidak dapat ditarik kesimpulan tentang debit air sungai."
+        ],
+        key: 4,
+        explanation: "Jembatan ditutup untuk umum ($U$) belum tentu disebabkan oleh meningkatnya debit air sungai ($P$). Karena urutannya dibalik dari akibat ke sebab (Affirming the Consequent), tidak dapat ditarik kesimpulan yang pasti."
+      },
+      {
+        id: 60,
+        text: "Premis:\nJika seorang siswa rajin membaca buku, maka wawasannya luas.\nJika wawasannya luas, maka ia mudah menyelesaikan soal ujian.\nJika ia mudah menyelesaikan soal ujian, maka nilainya tinggi.\nJika nilainya tinggi, maka ia mendapatkan beasiswa prestasi.\nJika ia mendapatkan beasiswa prestasi, maka ia bisa membeli laptop baru.\n\nPertanyaan: Budi diketahui bisa membeli laptop baru. Kesimpulan yang paling tepat adalah ...",
+        options: [
+          "Budi pasti rajin membaca buku.",
+          "Budi mungkin rajin membaca buku.",
+          "Budi tidak rajin membaca buku.",
+          "Budi pasti tidak mendapatkan beasiswa.",
+          "Nilai Budi pasti rendah."
+        ],
+        key: 1,
+        explanation: "Membenarkan akibat ($U$: membeli laptop baru) tidak menjamin sebab awal ($P$: rajin membaca) pasti terjadi. Budi bisa saja membeli laptop dari sumber lain. Jadi, Budi mungkin rajin membaca buku."
+      },
+      {
+        id: 61,
+        text: "Premis:\nJika Andi rajin berlatih, maka Andi terpilih masuk tim utama.\nJika Andi terpilih masuk tim utama, maka Andi mengikuti kejuaraan nasional.\nJika Andi mengikuti kejuaraan nasional, maka Andi dilirik oleh pemandu bakat.\nJika Andi dilirik oleh pemandu bakat, maka Andi mendapatkan tawaran beasiswa.\nJika Andi mendapatkan tawaran beasiswa, maka orang tua Andi merasa bangga.\n\nPertanyaan: Diketahui bahwa Andi tidak rajin berlatih. Kesimpulan yang tepat adalah ...",
+        options: [
+          "Orang tua Andi tidak merasa bangga.",
+          "Andi tidak mendapatkan tawaran beasiswa.",
+          "Andi tidak terpilih masuk tim utama.",
+          "Orang tua Andi tetap merasa bangga.",
+          "Tidak dapat ditarik kesimpulan."
+        ],
+        key: 4,
+        explanation: "Menolak sebab/anteseden ($\\sim P$) tidak secara otomatis menolak akibat akhir (Denying the Antecedent). Orang tua Andi bisa saja bangga karena prestasi lain. Maka tidak dapat ditarik kesimpulan."
+      }
+    ];
+
+    // STATE APLIKASI
+    let currentIndex = 0;
+    let userAnswers = {}; 
+    let doubtStatus = {}; 
+    let timeRemaining = 45 * 60; // Durasi 45 Menit
+    let timerInterval = null;
+
+    // LOGIN & PENGERJAAN
+    function startExam(event) {
+      event.preventDefault();
+      const nameInput = document.getElementById("student-name").value;
+      const passInput = document.getElementById("student-password").value;
+      const errorMsg = document.getElementById("password-error");
+
+      // Cek Password Login
+      if (passInput !== "skd26") {
+        errorMsg.classList.remove("hidden");
+        return;
+      }
+      errorMsg.classList.add("hidden");
+
+      if (!nameInput.trim()) return;
+
+      document.getElementById("display-name").textContent = nameInput;
+      document.getElementById("login-page").classList.add("hidden");
+      document.getElementById("exam-page").classList.remove("hidden");
+      document.getElementById("exam-page").classList.add("flex");
+
+      initExam();
+    }
+
+    function initExam() {
+      renderGrid();
+      loadQuestion(currentIndex);
+      startTimer();
+    }
+
+    // HITUNG MUNDUR WAKTU (45 Menit)
+    function startTimer() {
+      timerInterval = setInterval(() => {
+        if (timeRemaining <= 0) {
+          clearInterval(timerInterval);
+          alert("Waktu pengerjaan 45 menit telah habis!");
+          finishExam();
+          return;
+        }
+        timeRemaining--;
+
+        const hours = String(Math.floor(timeRemaining / 3600)).padStart(2, '0');
+        const minutes = String(Math.floor((timeRemaining % 3600) / 60)).padStart(2, '0');
+        const seconds = String(timeRemaining % 60).padStart(2, '0');
+
+        document.getElementById("timer").textContent = `${hours}:${minutes}:${seconds}`;
+      }, 1000);
+    }
+
+    // TAMPILKAN SOAL & RENDER MATHJAX
+    function loadQuestion(index) {
+      currentIndex = index;
+      const q = questions[index];
+
+      document.getElementById("question-number").textContent = index + 1;
+      document.getElementById("question-text").textContent = q.text;
+
+      const optionsContainer = document.getElementById("options-container");
+      optionsContainer.innerHTML = "";
+
+      const labels = ["A", "B", "C", "D", "E"];
+      q.options.forEach((opt, optIdx) => {
+        const isSelected = userAnswers[index] === optIdx;
+        const btn = document.createElement("label");
+        btn.className = `flex items-center gap-3 p-3.5 border rounded-lg cursor-pointer transition ${
+          isSelected 
+            ? 'bg-sky-50 border-sky-500 font-semibold text-sky-900 ring-1 ring-sky-500' 
+            : 'hover:bg-gray-50 border-gray-300 text-gray-700'
+        }`;
+
+        btn.innerHTML = `
+          <input type="radio" name="option" value="${optIdx}" ${isSelected ? 'checked' : ''} 
+            onchange="selectOption(${optIdx})" class="w-4 h-4 text-sky-600 focus:ring-sky-500">
+          <span class="w-6 h-6 flex items-center justify-center bg-gray-200 border rounded-full text-xs font-bold shrink-0">${labels[optIdx]}</span>
+          <span class="text-sm md:text-base">${opt}</span>
+        `;
+        optionsContainer.appendChild(btn);
+      });
+
+      document.getElementById("cb-doubt").checked = !!doubtStatus[index];
+      document.getElementById("btn-prev").disabled = index === 0;
+      
+      const btnNext = document.getElementById("btn-next");
+      if (index === questions.length - 1) {
+        btnNext.textContent = "Selesai";
+        btnNext.className = "bg-green-600 hover:bg-green-700 text-white font-semibold px-5 py-2 rounded text-sm transition shadow";
+      } else {
+        btnNext.innerHTML = "Soal Berikutnya &raquo;";
+        btnNext.className = "bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded text-sm transition shadow";
+      }
+
+      renderGrid();
+
+      // Render MathJax jika ada simbol matematika
+      if (window.MathJax && window.MathJax.typesetPromise) {
+        window.MathJax.typesetPromise();
+      }
+    }
+
+    function selectOption(optIdx) {
+      userAnswers[currentIndex] = optIdx;
+      renderGrid();
+      loadQuestion(currentIndex);
+    }
+
+    function toggleDoubt() {
+      const isChecked = document.getElementById("cb-doubt").checked;
+      doubtStatus[currentIndex] = isChecked;
+      renderGrid();
+    }
+
+    function prevQuestion() {
+      if (currentIndex > 0) loadQuestion(currentIndex - 1);
+    }
+
+    function handleNextOrFinish() {
+      if (currentIndex < questions.length - 1) {
+        loadQuestion(currentIndex + 1);
+      } else {
+        if (confirm("Apakah Anda yakin ingin menyelesaikan ujian ini?")) {
+          finishExam();
+        }
+      }
+    }
+
+    // RENDER DAFTAR KOTAK NOMOR SOAL
+    function renderGrid() {
+      const grid = document.getElementById("question-grid");
+      grid.innerHTML = "";
+
+      questions.forEach((_, idx) => {
+        const btn = document.createElement("button");
+        btn.onclick = () => loadQuestion(idx);
+        
+        const isAnswered = userAnswers.hasOwnProperty(idx);
+        const isDoubt = doubtStatus[idx];
+        const isCurrent = idx === currentIndex;
+
+        let colorClass = "bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200"; 
+        
+        if (isDoubt) {
+          colorClass = "bg-yellow-400 text-black border-yellow-500 font-bold"; 
+        } else if (isAnswered) {
+          colorClass = "bg-green-500 text-white border-green-600 font-bold"; 
+        }
+
+        let ringClass = isCurrent ? "ring-2 ring-offset-1 ring-sky-600 font-black" : "";
+
+        btn.className = `h-9 w-full flex items-center justify-center rounded border text-xs font-semibold transition ${colorClass} ${ringClass}`;
+        btn.textContent = idx + 1;
+
+        grid.appendChild(btn);
+      });
+    }
+
+    // SELESAI UJIAN & HITUNG SKOR
+    function finishExam() {
+      clearInterval(timerInterval);
+
+      let correctCount = 0;
+      let wrongCount = 0;
+
+      questions.forEach((q, idx) => {
+        if (userAnswers[idx] === q.key) {
+          correctCount++;
+        } else {
+          wrongCount++;
+        }
+      });
+
+      const finalScore = correctCount * 5;
+
+      document.getElementById("result-student-name").textContent = document.getElementById("student-name").value;
+      document.getElementById("score-correct").textContent = correctCount;
+      document.getElementById("score-wrong").textContent = wrongCount;
+      document.getElementById("score-final").textContent = finalScore;
+
+      renderReview();
+
+      document.getElementById("exam-page").classList.add("hidden");
+      document.getElementById("result-page").classList.remove("hidden");
+      document.getElementById("result-page").classList.add("flex");
+
+      if (window.MathJax && window.MathJax.typesetPromise) {
+        window.MathJax.typesetPromise();
+      }
+    }
+
+    // RENDER PEMBAHASAN
+    function renderReview() {
+      const container = document.getElementById("review-container");
+      container.innerHTML = "";
+
+      const labels = ["A", "B", "C", "D", "E"];
+
+      questions.forEach((q, idx) => {
+        const userAns = userAnswers[idx];
+        const isCorrect = userAns === q.key;
+        const userAnsText = userAns !== undefined ? `${labels[userAns]}. ${q.options[userAns]}` : "Tidak dijawab";
+        const keyText = `${labels[q.key]}. ${q.options[q.key]}`;
+
+        const item = document.createElement("div");
+        item.className = `p-4 border rounded-lg ${isCorrect ? 'border-green-300 bg-green-50/30' : 'border-red-300 bg-red-50/30'}`;
+
+        item.innerHTML = `
+          <div class="flex justify-between items-start mb-2">
+            <span class="font-bold text-gray-800">Soal No. ${idx + 1}</span>
+            <span class="px-2.5 py-0.5 rounded text-xs font-bold ${isCorrect ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+              ${isCorrect ? 'BENAR (+5)' : 'SALAH (+0)'}
+            </span>
+          </div>
+          <p class="text-gray-800 mb-3 whitespace-pre-line">${q.text}</p>
+          <div class="text-sm space-y-1 mb-3">
+            <div><span class="font-semibold text-gray-600">Jawaban Anda:</span> <span class="${isCorrect ? 'text-green-700 font-medium' : 'text-red-600 font-medium'}">${userAnsText}</span></div>
+            <div><span class="font-semibold text-gray-600">Kunci Jawaban:</span> <span class="text-green-700 font-semibold">${keyText}</span></div>
+          </div>
+          <div class="bg-white p-3 rounded border border-gray-200 text-xs md:text-sm text-gray-700">
+            <span class="font-bold text-sky-800 block mb-1">Pembahasan:</span>
+            ${q.explanation}
+          </div>
+        `;
+
+        container.appendChild(item);
+      });
+    }
+  </script>
+</body>
+</html>
