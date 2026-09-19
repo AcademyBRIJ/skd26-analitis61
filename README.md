@@ -1,0 +1,1 @@
+# skd26-analitis61
